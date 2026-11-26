@@ -12,7 +12,7 @@ Este repositório é o "motor" de publicação. Fluxo:
 
 ## Regras
 
-- Nunca agendar nem publicar nada sem o "aprovado" do João.
+- **Sempre mandar para aprovação e perguntar antes de agendar ou publicar**: a arte, a legenda completa, o perfil e o dia/horário. Só depois do "aprovado" do João. Vale mesmo quando ele manda a arte pronta ou diz "posta".
 - Nunca colocar token ou senha em arquivo. Eles ficam só nos Secrets do GitHub.
 - O João também pode agendar pela planilha do Google (secret `SHEET_CSV_URL`). O agente lê a planilha e o `calendario.csv` juntos.
 
