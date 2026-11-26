@@ -73,20 +73,7 @@ def baixar_texto(url):
         return r.read().decode("utf-8-sig")
 
 
-def carregar_calendario():
-    if SHEET_CSV_URL:
-        log("Lendo a planilha do Google...")
-        texto = baixar_texto(SHEET_CSV_URL)
-        if texto.lstrip().lower().startswith("<!doctype html") or "<html" in texto[:500].lower():
-            raise SystemExit(
-                "O link da planilha não devolveu um CSV. Use Arquivo > Compartilhar > "
-                "Publicar na Web, escolha a aba e o formato CSV, e copie esse link."
-            )
-    else:
-        log(f"Lendo {ARQUIVO_LOCAL}...")
-        with open(ARQUIVO_LOCAL, encoding="utf-8-sig") as f:
-            texto = f.read()
-
+def ler_csv(texto, origem):
     linhas = list(csv.reader(io.StringIO(texto)))
     if not linhas:
         return []
@@ -97,8 +84,27 @@ def carregar_calendario():
             continue
         linha = {cabecalho[i]: (valores[i].strip() if i < len(valores) else "")
                  for i in range(len(cabecalho))}
-        linha["_linha"] = n
+        linha["_linha"] = f"{origem} linha {n}"
         posts.append(linha)
+    return posts
+
+
+def carregar_calendario():
+    """Junta os posts da planilha do Google e do calendario.csv do repositório."""
+    posts = []
+    if SHEET_CSV_URL:
+        log("Lendo a planilha do Google...")
+        texto = baixar_texto(SHEET_CSV_URL)
+        if texto.lstrip().lower().startswith("<!doctype html") or "<html" in texto[:500].lower():
+            raise SystemExit(
+                "O link da planilha não devolveu um CSV. Use Arquivo > Compartilhar > "
+                "Publicar na Web, escolha a aba e o formato CSV, e copie esse link."
+            )
+        posts += ler_csv(texto, "Planilha")
+    if os.path.exists(ARQUIVO_LOCAL):
+        log(f"Lendo {ARQUIVO_LOCAL}...")
+        with open(ARQUIVO_LOCAL, encoding="utf-8-sig") as f:
+            posts += ler_csv(f.read(), "Calendário")
     return posts
 
 
@@ -358,7 +364,7 @@ def main():
     falhas, publicados, proximos = 0, 0, []
 
     for post in posts:
-        rotulo = f"Linha {post['_linha']}"
+        rotulo = post["_linha"]
         try:
             chave = chave_do_post(post)
             if chave in estado or not ativo(post):
