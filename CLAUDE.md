@@ -16,9 +16,16 @@ Este repositório é o "motor" de publicação. Fluxo:
 - Nunca colocar token ou senha em arquivo. Eles ficam só nos Secrets do GitHub.
 - O João também pode agendar pela planilha do Google (secret `SHEET_CSV_URL`). O agente lê a planilha e o `calendario.csv` juntos.
 
+## Perfis (multi-cliente)
+
+- Coluna `perfil` vazia = @joaovitor_gestor (segredo IG_USER_ID).
+- Outros perfis ficam em `perfis.json` (`"slug": {"nome", "ig_user_id"}`). Para descobrir o ID, rode o workflow "Descobrir ID do Instagram" depois de atribuir o Instagram do cliente ao usuário do sistema "agente".
+- As mídias de cada cliente ficam em `midia/<slug>/` (ex.: `midia/bl-barbearia/`).
+- Cada cliente tem a própria identidade visual. Nunca use o azul do @joaovitor_gestor nos clientes.
+
 ## Formato do calendario.csv
 
-`data,hora,tipo,midia,legenda,ativo`
+`data,hora,tipo,midia,legenda,ativo,perfil`
 
 - **data:** `DD/MM/AAAA`.
 - **hora:** `HH:MM`, horário de Brasília.

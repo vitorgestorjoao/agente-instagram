@@ -46,6 +46,7 @@ FUSO = ZoneInfo(os.environ.get("FUSO", "America/Sao_Paulo"))
 JANELA_HORAS = float(os.environ.get("JANELA_HORAS", "6") or 6)
 DRY_RUN = os.environ.get("DRY_RUN", "").strip().lower() in ("1", "true", "sim", "yes")
 
+ARQUIVO_PERFIS = os.environ.get("ARQUIVO_PERFIS", "perfis.json")
 EXT_VIDEO = (".mp4", ".mov", ".m4v")
 NAO = ("nao", "n", "0", "false", "pausado", "pausar", "off")
 
@@ -137,6 +138,33 @@ def eh_video(item):
     return caminho.lower().endswith(EXT_VIDEO)
 
 
+def carregar_perfis():
+    try:
+        with open(ARQUIVO_PERFIS, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+
+def perfil_do_post(post):
+    return sem_acento(post.get("perfil", "")).replace(" ", "-")
+
+
+def id_do_perfil(perfil, perfis):
+    """Perfil vazio = conta principal (segredo IG_USER_ID)."""
+    if not perfil:
+        return IG_USER_ID
+    dados = perfis.get(perfil)
+    if not dados:
+        raise ErroPost(f"perfil '{perfil}' não está cadastrado em {ARQUIVO_PERFIS}")
+    if not str(dados.get("ig_user_id", "")).strip():
+        raise ErroPost(f"perfil '{perfil}' ainda sem ig_user_id em {ARQUIVO_PERFIS}")
+    return str(dados["ig_user_id"]).strip()
+
+
+PASTA_PERFIL = ""
+
+
 def url_publica(item):
     """Converte o que está na planilha num link que o Instagram consegue baixar."""
     video = eh_video(item)
@@ -147,7 +175,8 @@ def url_publica(item):
     if "://" not in item:
         if not REPO_RAW_BASE:
             raise ErroPost(f"'{item}' não é um link e o endereço do repositório não está configurado")
-        caminho = item if "/" in item else f"midia/{item}"
+        pasta = f"midia/{PASTA_PERFIL}/" if PASTA_PERFIL else "midia/"
+        caminho = item if "/" in item else pasta + item
         return REPO_RAW_BASE.rstrip("/") + "/" + urllib.parse.quote(caminho), video
 
     # Link de compartilhamento do Google Drive
@@ -183,6 +212,8 @@ def chave_do_post(post):
         return f"id:{post['id']}"
     base = "|".join([post.get("data", ""), post.get("hora", ""), post.get("midia", ""),
                      post.get("legenda", "")[:80]])
+    if perfil_do_post(post):
+        base = perfil_do_post(post) + "|" + base
     return "h:" + hashlib.sha1(base.encode()).hexdigest()[:12]
 
 
@@ -346,6 +377,7 @@ def salvar_estado(estado):
 # ---------------------------------------------------------------- principal
 
 def main():
+    global IG_USER_ID, PASTA_PERFIL
     simular = DRY_RUN or "--testar" in sys.argv
     if not simular and (not TOKEN or not IG_USER_ID):
         log("Agente ainda não configurado: faltam os segredos IG_TOKEN e/ou IG_USER_ID. Nada a fazer.")
@@ -358,6 +390,7 @@ def main():
         escolher_host()
 
     estado = carregar_estado()
+    perfis = carregar_perfis()
     posts = carregar_calendario()
     log(f"{len(posts)} linha(s) no calendário.\n")
 
@@ -370,6 +403,9 @@ def main():
             if chave in estado or not ativo(post):
                 continue
             quando = ler_data_hora(post)
+            perfil = perfil_do_post(post)
+            conta = id_do_perfil(perfil, perfis) if not simular else ""
+            PASTA_PERFIL = perfil
             midias = lista_midias(post)
             tipo = tipo_do_post(post, midias)
             validar(post, tipo, midias)
@@ -378,7 +414,7 @@ def main():
             log(f"❌ {rotulo}: {e}")
             continue
 
-        rotulo += f" ({tipo} de {quando:%d/%m %H:%M})"
+        rotulo += f" ({tipo} de {quando:%d/%m %H:%M}{' · @' + perfil if perfil else ''})"
         if quando > agora:
             proximos.append((quando, rotulo))
             continue
@@ -394,8 +430,15 @@ def main():
 
         try:
             log(f"⏳ {rotulo}: publicando...")
-            ids = publicar(post, tipo, midias)
-            estado[chave] = {"ids": ids, "tipo": tipo, "agendado": quando.isoformat(),
+            principal = IG_USER_ID
+            PASTA_PERFIL = perfil
+            IG_USER_ID = conta
+            try:
+                ids = publicar(post, tipo, midias)
+            finally:
+                IG_USER_ID = principal
+            estado[chave] = {"ids": ids, "tipo": tipo, "perfil": perfil or "principal",
+                             "agendado": quando.isoformat(),
                              "publicado_em": datetime.now(FUSO).isoformat(timespec="seconds")}
             salvar_estado(estado)  # salva na hora, para nunca repetir
             link = link_do_post(ids[-1])
