@@ -30,12 +30,28 @@ erros = []
 dados, erro = get(f"https://graph.facebook.com/{V}/me/accounts",
                   fields="name,instagram_business_account{id,username}")
 if dados:
+    print("Páginas que o token enxerga:")
     for pg in dados.get("data", []):
         ig = pg.get("instagram_business_account")
+        print(f" - {pg.get('name')}: " + (f"Instagram @{ig.get('username')}" if ig else "SEM Instagram ligado"))
         if ig:
             achados[ig["id"]] = ig.get("username")
+    if not dados.get("data"):
+        print(" (nenhuma)")
+    print()
 else:
     erros.append(f"graph.facebook.com/me/accounts: {erro}")
+
+# 1b) Contas do Instagram atribuídas diretamente ao usuário do sistema
+dados, erro = get(f"https://graph.facebook.com/{V}/me",
+                  fields="name,businesses{name,instagram_business_accounts{id,username},client_instagram_business_accounts{id,username}}")
+if dados:
+    for b in (dados.get("businesses") or {}).get("data", []):
+        for chave in ("instagram_business_accounts", "client_instagram_business_accounts"):
+            for ig in (b.get(chave) or {}).get("data", []):
+                achados[ig["id"]] = ig.get("username")
+elif erro:
+    erros.append(f"graph.facebook.com/me businesses: {erro}")
 
 # 2) Token do login unificado / Instagram: o próprio /me
 for host, campos in (("https://graph.facebook.com", "id,username"),
