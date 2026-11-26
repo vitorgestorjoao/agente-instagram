@@ -326,7 +326,8 @@ def salvar_estado(estado):
 def main():
     simular = DRY_RUN or "--testar" in sys.argv
     if not simular and (not TOKEN or not IG_USER_ID):
-        raise SystemExit("Faltam os segredos IG_TOKEN e/ou IG_USER_ID nas configurações do GitHub.")
+        log("Agente ainda não configurado: faltam os segredos IG_TOKEN e/ou IG_USER_ID. Nada a fazer.")
+        return
 
     agora = datetime.now(FUSO)
     log(f"Agora: {agora:%d/%m/%Y %H:%M} ({FUSO.key})" + ("  [MODO TESTE: nada será publicado]" if simular else ""))
