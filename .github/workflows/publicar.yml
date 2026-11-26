@@ -1,0 +1,51 @@
+name: Publicar no Instagram
+
+on:
+  schedule:
+    # A cada 30 minutos (minutos 7 e 37 de cada hora, horário UTC).
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      testar:
+        description: "Só simular (não publica nada)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publicar-instagram
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Publicar posts do horário
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          SHEET_CSV_URL: ${{ secrets.SHEET_CSV_URL }}
+          REPO_RAW_BASE: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/
+          DRY_RUN: ${{ inputs.testar && 'true' || 'false' }}
+        run: python publicar.py
+
+      - name: Salvar registro de publicados
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain publicados.json)" ]; then
+            git config user.name "agente-instagram"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add publicados.json
+            git commit -m "Registro de posts publicados"
+            git pull --rebase
+            git push
+          fi
