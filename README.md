@@ -26,7 +26,7 @@ Antes de começar, confira dois requisitos:
 4. Volte ao usuário do sistema e clique em **Gerar novo token**:
    - Escolha o app.
    - Em validade, escolha **Nunca**.
-   - Marque estas permissões: `instagram_basic`, `instagram_content_publish`, `pages_show_list`, `pages_read_engagement`, `business_management`.
+   - Marque estas permissões: `instagram_basic`, `instagram_content_publish`, `pages_show_list`, `pages_read_engagement`, `business_management` (no login unificado novo da Meta elas aparecem como `instagram_business_basic` e `instagram_business_content_publish`).
 5. **Copie o token** e guarde, porque ele não aparece de novo.
 
 > Você é dono do app e da conta, então não precisa enviar o app para análise da Meta.

@@ -34,7 +34,8 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 GRAPH_VERSION = os.environ.get("GRAPH_VERSION", "v23.0")
-GRAPH = f"https://graph.facebook.com/{GRAPH_VERSION}"
+HOSTS = ["https://graph.facebook.com", "https://graph.instagram.com"]
+GRAPH = f"{HOSTS[0]}/{GRAPH_VERSION}"
 TOKEN = os.environ.get("IG_TOKEN", "").strip()
 IG_USER_ID = os.environ.get("IG_USER_ID", "").strip()
 SHEET_CSV_URL = os.environ.get("SHEET_CSV_URL", "").strip()
@@ -211,6 +212,21 @@ def api(metodo, caminho, params=None):
         raise ErroPost(f"Instagram recusou: {msg}") from None
 
 
+def escolher_host():
+    """Descobre se o token funciona em graph.facebook.com ou graph.instagram.com."""
+    global GRAPH
+    ultimo = None
+    for host in HOSTS:
+        GRAPH = f"{host}/{GRAPH_VERSION}"
+        try:
+            r = api("GET", IG_USER_ID, {"fields": "username"})
+            log(f"Conectado como @{r.get('username', '?')} ({host.split('//')[1]})\n")
+            return
+        except ErroPost as e:
+            ultimo = e
+    raise SystemExit(f"O token ou o IG_USER_ID não funcionou: {ultimo}")
+
+
 def aguardar(container_id, limite=900):
     inicio = time.time()
     while True:
@@ -331,6 +347,9 @@ def main():
 
     agora = datetime.now(FUSO)
     log(f"Agora: {agora:%d/%m/%Y %H:%M} ({FUSO.key})" + ("  [MODO TESTE: nada será publicado]" if simular else ""))
+
+    if not simular:
+        escolher_host()
 
     estado = carregar_estado()
     posts = carregar_calendario()
