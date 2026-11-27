@@ -1,4 +1,14 @@
 {
+  "h:1de8627d2292": {
+    "agendado": "2026-11-27T17:30:00-03:00",
+    "ids": [
+      "18130830347484856"
+    ],
+    "link": "https://www.instagram.com/reel/DgQ2c97Bc2p/",
+    "perfil": "principal",
+    "publicado_em": "2026-11-27T20:23:35-03:00",
+    "tipo": "REELS"
+  },
   "h:2079250d4424": {
     "agendado": "2026-11-27T09:00:00-03:00",
     "ids": [
@@ -37,6 +47,16 @@
     "link": "https://www.instagram.com/stories/joaovitor_gestor/4039091495608932029",
     "publicado_em": "2026-11-26T15:21:04-03:00",
     "tipo": "STORY"
+  },
+  "h:f4708b13bb9f": {
+    "agendado": "2026-11-27T15:00:00-03:00",
+    "ids": [
+      "17969948457208732"
+    ],
+    "link": "https://www.instagram.com/p/DgQ2WLNlaIe/",
+    "perfil": "principal",
+    "publicado_em": "2026-11-27T20:22:17-03:00",
+    "tipo": "FOTO"
   },
   "h:f9699d7056f1": {
     "agendado": "2026-11-26T15:10:00-03:00",
